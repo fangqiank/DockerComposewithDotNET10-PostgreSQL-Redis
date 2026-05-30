@@ -12,6 +12,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__Database=Host=products.database;Port=5432;Database=${DB_DATABASE};Username=${DB_USER};Password=${DB_PASSWORD}
       - ConnectionStrings__Cache=products.cache:6379,password=${CACHE_PASSWORD}
+      - Authentication__ApiKey=${API_KEY}
     depends_on:
       products.database:
         condition: service_healthy
@@ -43,16 +44,19 @@ services:
 
   products.cache:
     image: redis:8-alpine
+    container_name: products.cache
     command: redis-server --requirepass ${CACHE_PASSWORD}
     restart: always
     ports:
       - 6379:6379
+    environment:
+      - CACHE_PASSWORD=${CACHE_PASSWORD}
     networks:
      - "default"
     volumes:
       - cache-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a $$CACHE_PASSWORD ping"]
       interval: 10s
       timeout: 5s
       retries: 5

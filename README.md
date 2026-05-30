@@ -16,36 +16,46 @@ A containerized .NET 10 Minimal API for product CRUD operations, backed by Postg
 | ORM | EF Core + Npgsql | 10 |
 | Cache Provider | StackExchange.Redis + IDistributedCache | 2.x |
 | API Docs | Scalar OpenAPI | 2.x |
-| Container Orchestration | Docker Compose | - |
+| Auth | API Key Middleware (X-Api-Key) | - |
+| Container | Docker Compose | - |
 
 ## Architecture
 
 Three services on a shared Docker bridge network:
 
-- **products.api** — .NET 10 Minimal API (ports 5000/5001 → 8080/8081). Multi-stage Docker build. Waits for DB health check before starting.
-- **products.database** — PostgreSQL 18 Alpine. Data persisted via named volume `database-data`.
-- **products.cache** — Redis 8 Alpine with password auth. Data persisted via named volume `cache-data`.
+- **products.api** — .NET 10 Minimal API (port 5000 → 8080). Multi-stage Docker build. Waits for DB health check.
+- **products.database** — PostgreSQL 18 Alpine. Named volume `database-data`. Health check via `pg_isready`.
+- **products.cache** — Redis 8 Alpine with password auth. Named volume `cache-data`. Health check via `redis-cli -a ping`.
+
+### Middleware Pipeline
+
+```
+Request → ExceptionHandler → API Key Auth → Endpoints
+```
+
+- **ExceptionHandler** — Returns `{ "error": "..." }` JSON for unhandled exceptions
+- **API Key Auth** — Requires `X-Api-Key` header on all endpoints except `/openapi` and `/scalar`
 
 ### Cache Strategy
 
-Cache-aside pattern with `IDistributedCache`:
+Cache-aside pattern with `IDistributedCache`. Keys include pagination params:
 
 | Operation | Cache Key | TTL | Behavior |
 |-----------|-----------|-----|----------|
-| GET /products | `products:all` | 5 min | Read cache first, miss → query DB → cache result |
-| GET /products/{id} | `products:{id}` | 5 min | Read cache first, miss → query DB → cache result |
-| POST /products | — | — | Insert DB, invalidate `products:all` |
-| PUT /products/{id} | — | — | Update DB, invalidate `products:{id}` + `products:all` |
-| DELETE /products/{id} | — | — | Soft delete (IsDeleted=true), invalidate cache |
+| GET /products | `products:all:{page}:{pageSize}` | 5 min | Cache miss → query DB → cache result |
+| GET /products/{id} | `products:{id}` | 5 min | Cache miss → query DB → cache result |
+| POST /products | — | — | Insert DB, invalidate cache |
+| PUT /products/{id} | — | — | Update DB, invalidate cache |
+| DELETE /products/{id} | — | — | Soft delete, invalidate cache |
 
 ### Soft Delete
 
-EF Core global query filter `HasQueryFilter(e => !e.IsDeleted)` ensures deleted products are excluded from all queries automatically.
+EF Core global query filter `HasQueryFilter(e => !e.IsDeleted)` excludes deleted products from all queries. Uses `FirstOrDefaultAsync` to ensure filter is always applied.
 
 ## Quick Start
 
 ```bash
-# Clone and start all services
+# Start all services
 docker compose up -d
 
 # Rebuild after code changes
@@ -60,26 +70,43 @@ docker compose down -v
 
 The API will be available at:
 - HTTP: `http://localhost:5000`
-- HTTPS: `https://localhost:5001`
-- Scalar Docs: `http://localhost:5000/scalar/v1`
+- Scalar Docs: `http://localhost:5000/scalar/v1` (no API key required)
+- OpenAPI JSON: `http://localhost:5000/openapi/v1.json`
 
 ## API Endpoints
 
+All endpoints require `X-Api-Key` header except OpenAPI/Scalar docs.
+
 | Method | Route | Description |
 |--------|-------|-------------|
-| `GET` | `/products` | List all products (cached, ordered by newest first) |
+| `GET` | `/products` | List products (paginated, cached) |
 | `GET` | `/products/{id}` | Get product by ID (cached) |
 | `POST` | `/products` | Create a new product |
 | `PUT` | `/products/{id}` | Update a product |
 | `DELETE` | `/products/{id}` | Soft delete a product |
 
+### Query Parameters (GET /products)
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `page` | int | 1 | Page number (min 1) |
+| `pageSize` | int | 20 | Items per page (1-100) |
+
 ## Example Requests
+
+### List products
+
+```bash
+curl "http://localhost:5000/products?page=1&pageSize=5" \
+  -H "X-Api-Key: dev-api-key-123"
+```
 
 ### Create a product
 
 ```bash
 curl -X POST http://localhost:5000/products \
   -H "Content-Type: application/json" \
+  -H "X-Api-Key: dev-api-key-123" \
   -d '{
     "name": "Mechanical Keyboard",
     "description": "Cherry MX Brown switches, RGB backlight",
@@ -89,16 +116,11 @@ curl -X POST http://localhost:5000/products \
   }'
 ```
 
-### List all products
+### Get a product
 
 ```bash
-curl http://localhost:5000/products
-```
-
-### Get a single product
-
-```bash
-curl http://localhost:5000/products/{id}
+curl http://localhost:5000/products/{id} \
+  -H "X-Api-Key: dev-api-key-123"
 ```
 
 ### Update a product
@@ -106,9 +128,10 @@ curl http://localhost:5000/products/{id}
 ```bash
 curl -X PUT http://localhost:5000/products/{id} \
   -H "Content-Type: application/json" \
+  -H "X-Api-Key: dev-api-key-123" \
   -d '{
     "name": "Mechanical Keyboard V2",
-    "description": "Updated model with hot-swap sockets",
+    "description": "Hot-swap sockets, PBT keycaps",
     "price": 169.99,
     "stock": 30,
     "category": "Peripherals"
@@ -118,8 +141,19 @@ curl -X PUT http://localhost:5000/products/{id} \
 ### Delete a product (soft delete)
 
 ```bash
-curl -X DELETE http://localhost:5000/products/{id}
+curl -X DELETE http://localhost:5000/products/{id} \
+  -H "X-Api-Key: dev-api-key-123"
 ```
+
+## Validation Rules
+
+| Field | Rule |
+|-------|------|
+| Name | Required, max 200 chars |
+| Description | Max 2000 chars |
+| Price | Required, > 0 |
+| Stock | >= 0 |
+| Category | Required, max 100 chars |
 
 ## Product Entity
 
@@ -144,18 +178,20 @@ Products.Api/
 ├── Data/
 │   └── AppDbContext.cs         # EF Core DbContext + soft delete filter
 ├── Endpoints/
-│   └── ProductEndpoints.cs     # CRUD route group with caching
+│   └── ProductEndpoints.cs     # CRUD routes with caching, validation, logging
+├── Middleware/
+│   └── ApiKeyMiddleware.cs     # X-Api-Key authentication
 ├── Migrations/                 # EF Core migrations
 ├── Models/
 │   └── Product.cs              # Entity + request DTOs
 ├── Dockerfile                  # Multi-stage Docker build
-├── Program.cs                  # Startup configuration
+├── Program.cs                  # Startup + DI + middleware pipeline
 └── Products.Api.csproj         # NuGet packages
 ```
 
 ## Configuration
 
-Environment variables injected via `docker-compose.yml` (see `.env` file):
+Environment variables via `docker-compose.yml` (values from `.env`):
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -163,7 +199,4 @@ Environment variables injected via `docker-compose.yml` (see `.env` file):
 | `DB_USER` | PostgreSQL username | `postgres` |
 | `DB_PASSWORD` | PostgreSQL password | `postgres` |
 | `CACHE_PASSWORD` | Redis requirepass | `STRONG_PASSWORD-123` |
-
-Connection strings are injected as:
-- `ConnectionStrings__Database` → PostgreSQL host, port, db, user, password
-- `ConnectionStrings__Cache` → Redis host, port, password
+| `API_KEY` | API key for endpoint auth | `dev-api-key-123` |
