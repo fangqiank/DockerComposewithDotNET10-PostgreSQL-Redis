@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="10" markerHeight="7" orient="auto-start-reverse">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="10" markerHeight="7" orient="auto-start-reverse">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="10" markerHeight="7" orient="auto-start-reverse">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="10" markerHeight="7" orient="auto-start-reverse">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444"/>
+    </marker>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.1"/>
+    </filter>
+    <linearGradient id="apiGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="dbGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+    <linearGradient id="cacheGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </linearGradient>
+    <linearGradient id="dockerGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="620" rx="12" fill="#f8fafc"/>
+
+  <!-- Title -->
+  <text x="480" y="36" text-anchor="middle" font-size="18" font-weight="700" fill="#1e293b">Products API Architecture</text>
+  <text x="480" y="56" text-anchor="middle" font-size="12" fill="#94a3b8">.NET 10 Minimal API + PostgreSQL 18 + Redis 8</text>
+
+  <!-- Docker Compose Boundary -->
+  <rect x="30" y="72" width="900" height="530" rx="10" fill="none" stroke="#a5b4fc" stroke-width="2" stroke-dasharray="8 4"/>
+  <rect x="42" y="64" width="160" height="20" rx="4" fill="#6366f1"/>
+  <text x="122" y="78" text-anchor="middle" font-size="11" fill="white" font-weight="600">Docker Compose</text>
+
+  <!-- Bridge Network Label -->
+  <rect x="60" y="560" width="120" height="22" rx="4" fill="#e0e7ff"/>
+  <text x="120" y="575" text-anchor="middle" font-size="10" fill="#4338ca" font-weight="500">Bridge Network</text>
+
+  <!-- ==================== Client ==================== -->
+  <rect x="390" y="90" width="180" height="50" rx="8" fill="white" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="480" y="112" text-anchor="middle" font-size="13" font-weight="600" fill="#334155">Client / Browser</text>
+  <text x="480" y="128" text-anchor="middle" font-size="10" fill="#94a3b8">HTTP :5000 / :5001</text>
+
+  <!-- ==================== API Service ==================== -->
+  <rect x="280" y="190" width="400" height="210" rx="10" fill="white" stroke="#93c5fd" stroke-width="1.5" filter="url(#shadow)"/>
+  <!-- API Header -->
+  <rect x="280" y="190" width="400" height="36" rx="10" fill="url(#apiGrad)"/>
+  <rect x="280" y="210" width="400" height="16" fill="url(#apiGrad)"/>
+  <text x="480" y="214" text-anchor="middle" font-size="14" font-weight="700" fill="white">Products.Api</text>
+  <text x="480" y="214" text-anchor="middle" font-size="14" font-weight="700" fill="white">Products.Api</text>
+
+  <!-- API Internal Modules -->
+  <!-- Endpoints -->
+  <rect x="300" y="240" width="160" height="55" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="380" y="260" text-anchor="middle" font-size="11" font-weight="600" fill="#1d4ed8">Endpoints</text>
+  <text x="380" y="278" text-anchor="middle" font-size="9" fill="#64748b">GET/POST/PUT/DELETE</text>
+  <text x="380" y="290" text-anchor="middle" font-size="9" fill="#64748b">/products/*</text>
+
+  <!-- EF Core -->
+  <rect x="300" y="308" width="160" height="55" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+  <text x="380" y="328" text-anchor="middle" font-size="11" font-weight="600" fill="#15803d">EF Core + Npgsql</text>
+  <text x="380" y="346" text-anchor="middle" font-size="9" fill="#64748b">AppDbContext</text>
+  <text x="380" y="358" text-anchor="middle" font-size="9" fill="#64748b">Soft Delete Filter</text>
+
+  <!-- Cache Layer -->
+  <rect x="500" y="240" width="160" height="55" rx="6" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
+  <text x="580" y="260" text-anchor="middle" font-size="11" font-weight="600" fill="#dc2626">IDistributedCache</text>
+  <text x="580" y="278" text-anchor="middle" font-size="9" fill="#64748b">Cache-Aside Pattern</text>
+  <text x="580" y="290" text-anchor="middle" font-size="9" fill="#64748b">TTL: 5 min</text>
+
+  <!-- OpenAPI -->
+  <rect x="500" y="308" width="160" height="55" rx="6" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1"/>
+  <text x="580" y="328" text-anchor="middle" font-size="11" font-weight="600" fill="#7c3aed">Scalar OpenAPI</text>
+  <text x="580" y="346" text-anchor="middle" font-size="9" fill="#64748b">/scalar/v1</text>
+  <text x="580" y="358" text-anchor="middle" font-size="9" fill="#64748b">/openapi/v1.json</text>
+
+  <!-- ==================== PostgreSQL ==================== -->
+  <rect x="60" y="450" width="260" height="130" rx="10" fill="white" stroke="#86efac" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="60" y="450" width="260" height="36" rx="10" fill="url(#dbGrad)"/>
+  <rect x="60" y="470" width="260" height="16" fill="url(#dbGrad)"/>
+  <text x="190" y="474" text-anchor="middle" font-size="14" font-weight="700" fill="white">PostgreSQL 18</text>
+
+  <text x="190" y="505" text-anchor="middle" font-size="11" fill="#334155">products.database</text>
+  <text x="190" y="524" text-anchor="middle" font-size="10" fill="#64748b">Port: 5432</text>
+  <text x="190" y="543" text-anchor="middle" font-size="10" fill="#64748b">DB: products</text>
+  <text x="190" y="562" text-anchor="middle" font-size="10" fill="#94a3b8">Named Volume: database-data</text>
+
+  <!-- ==================== Redis ==================== -->
+  <rect x="640" y="450" width="260" height="130" rx="10" fill="white" stroke="#fca5a5" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="640" y="450" width="260" height="36" rx="10" fill="url(#cacheGrad)"/>
+  <rect x="640" y="470" width="260" height="16" fill="url(#cacheGrad)"/>
+  <text x="770" y="474" text-anchor="middle" font-size="14" font-weight="700" fill="white">Redis 8</text>
+
+  <text x="770" y="505" text-anchor="middle" font-size="11" fill="#334155">products.cache</text>
+  <text x="770" y="524" text-anchor="middle" font-size="10" fill="#64748b">Port: 6379</text>
+  <text x="770" y="543" text-anchor="middle" font-size="10" fill="#64748b">Auth: requirepass</text>
+  <text x="770" y="562" text-anchor="middle" font-size="10" fill="#94a3b8">Named Volume: cache-data</text>
+
+  <!-- ==================== Arrows ==================== -->
+  <!-- Client -> API -->
+  <line x1="480" y1="140" x2="480" y2="188" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="498" y="168" font-size="9" fill="#64748b">HTTP</text>
+
+  <!-- API -> PostgreSQL (EF Core) -->
+  <line x1="350" y1="400" x2="200" y2="448" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <text x="240" y="418" font-size="9" fill="#16a34a" transform="rotate(-20, 240, 418)">Npgsql :5432</text>
+
+  <!-- API -> Redis (Cache) -->
+  <line x1="610" y1="400" x2="760" y2="448" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <text x="710" y="418" font-size="9" fill="#dc2626" transform="rotate(20, 710, 418)">StackExchange.Redis :6379</text>
+
+  <!-- Legend -->
+  <rect x="750" y="90" width="170" height="80" rx="6" fill="white" stroke="#e2e8f0" stroke-width="1" filter="url(#shadow)"/>
+  <text x="835" y="108" text-anchor="middle" font-size="10" font-weight="600" fill="#334155">Data Flow</text>
+  <line x1="765" y1="120" x2="800" y2="120" stroke="#22c55e" stroke-width="2"/>
+  <text x="810" y="124" font-size="9" fill="#64748b">Read/Write</text>
+  <line x1="765" y1="138" x2="800" y2="138" stroke="#ef4444" stroke-width="2"/>
+  <text x="810" y="142" font-size="9" fill="#64748b">Cache Read/Write</text>
+  <line x1="765" y1="156" x2="800" y2="156" stroke="#64748b" stroke-width="2" stroke-dasharray="4 2"/>
+  <text x="810" y="160" font-size="9" fill="#64748b">Health Check</text>
+</svg>

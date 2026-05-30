@@ -1,0 +1,66 @@
+services:
+  products.api:
+    image: ${DOCKER_REGISTRY-}productsapi
+    container_name: products.api
+    build:
+      context: .
+      dockerfile: Products.Api/Dockerfile
+    ports:
+      - 5000:8080
+      - 5001:8081
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Database=Host=products.database;Port=5432;Database=${DB_DATABASE};Username=${DB_USER};Password=${DB_PASSWORD}
+      - ConnectionStrings__Cache=products.cache:6379,password=${CACHE_PASSWORD}
+    depends_on:
+      products.database:
+        condition: service_healthy
+      products.cache:
+        condition: service_started
+    restart: always
+    networks:
+      - "default"
+
+  products.database:
+    image: postgres:18-alpine
+    container_name: products.database
+    environment:
+      - POSTGRES_DB=${DB_DATABASE}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - database-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - "default"
+
+  products.cache:
+    image: redis:8-alpine
+    command: redis-server --requirepass ${CACHE_PASSWORD}
+    restart: always
+    ports:
+      - 6379:6379
+    networks:
+     - "default"
+    volumes:
+      - cache-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  database-data:
+  cache-data:
+
+networks:
+  default:
+    driver: bridge
